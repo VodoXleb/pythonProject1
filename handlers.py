@@ -50,9 +50,7 @@ async def manage_task(msg: types.Message):
     if len(tasks) > 0:
         builder = InlineKeyboardBuilder()
         for i in range(len(tasks)):
-            tasknew = tasks[i]
-            print(tasknew.name)
-            builder.button(text=f"{tasknew.name}", callback_data="callback1")
+            builder.button(text=f"{tasks[i].name}", callback_data=f"manage/{i}")
         await msg.answer("Сейчас есть следующие задачи:", reply_markup=builder.as_markup(resize_keyboard=True))
     else:
         await msg.answer("Сейчас нет задач")
@@ -89,7 +87,7 @@ async def accept_task(callback: types.CallbackQuery):
     global msgid
     await msgid.delete()
     await callback.message.delete()
-    await callback.message.answer("Понял, сохраняю")
+    #await callback.message.answer("Понял, сохраняю")
 
 
 @callback_router.callback_query(F.data == "reject_task")
@@ -102,8 +100,33 @@ async def reject_task(callback: types.CallbackQuery):
     global msgid
     await msgid.delete()
     await callback.message.delete()
-    await callback.message.answer("Понял, отмена")
+    #await callback.message.answer("Понял, отмена")
 
+
+@callback_router.callback_query(F.data.find('manage') != -1)
+async def manage_task(callback: types.CallbackQuery):
+    i = int((callback.data.split('/'))[1])
+    global tasks
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Удалить", callback_data=f"delete/{i}")
+    builder.button(text="Не удалять", callback_data="dont delete")
+    global msgid
+    msgid = await callback.message.answer(f"Задача \n Название: {tasks[i].name} \n Описание: {tasks[i].desc}", reply_markup=builder.as_markup(resize_keyboard=True))
+
+
+@callback_router.callback_query(F.data.startswith('delete'))
+async def reject_task(callback: types.CallbackQuery):
+    global tasks
+    i = int((callback.data.split('/'))[1])
+    tasks.pop(i)
+    global msgid
+    await msgid.delete()
+
+
+@callback_router.callback_query(F.data == "dont delete")
+async def reject_task(callback: types.CallbackQuery):
+    global msgid
+    await msgid.delete()
 
 
 # @msg_router.message(Command("random_generator"))
